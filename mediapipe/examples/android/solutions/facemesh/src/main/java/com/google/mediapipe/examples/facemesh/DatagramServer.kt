@@ -39,7 +39,7 @@ fun toQuaternion(
 
 object DatagramServer {
     private val socket: DatagramSocket = DatagramSocket()
-    private var queue: BlockingQueue<LandmarkProto.NormalizedLandmarkList> = LinkedBlockingQueue()
+    private var queue: BlockingQueue<NormalizedLandmarkList> = LinkedBlockingQueue()
 
     init {
         thread(start = true, isDaemon = false, name = "datagramSender") {
@@ -53,7 +53,7 @@ object DatagramServer {
                     val livelink_format = JSONObject()
                     val livelink_params = JSONArray()
                     for (key in json.keys()) {
-                        val param = JSONObject();
+                        val param = JSONObject()
                         param.put("Name", key)
                         param.put("Value", json.get(key))
                         livelink_params.put(param)
@@ -87,8 +87,9 @@ object DatagramServer {
     }
 
     fun send(result: FaceMeshResult) {
-        val data = result.multiFaceLandmarks();
+        val data = result.multiFaceLandmarks()
         if (data.isNotEmpty()) {
+
             queue.put(data[0])
         }
     }
@@ -142,7 +143,7 @@ private fun div(
 }
 
 // Converted from https://github.com/JimWest/MeFaMo/blob/main/mefamo/blendshapes/blendshape_calculator.py
-fun calculateMouth(lm: LandmarkProto.NormalizedLandmarkList, blendshapes: JSONObject)  {
+fun calculateMouth(lm: NormalizedLandmarkList, blendshapes: JSONObject)  {
     val upper_lip = lm.getLandmark(LandmarkIndices.upperLip[0])
     val upper_outer_lip = lm.getLandmark(LandmarkIndices.upperOuterLip[0])
     val lower_lip = lm.getLandmark(LandmarkIndices.lowerLip[0])

@@ -1,7 +1,7 @@
 package com.google.mediapipe.examples.facemesh
 
-public data class BlendShapeConfig(val min: Float,val  max: Float, val name: String)
-public data class BlendShape(val value: Float, val name: String)
+data class BlendShapeConfig(val min: Float,val  max: Float, val name: String)
+data class BlendShape(val value: Float, val name: String)
 
 object LandmarkIndices {
     // The Mediapipe canonical points:
