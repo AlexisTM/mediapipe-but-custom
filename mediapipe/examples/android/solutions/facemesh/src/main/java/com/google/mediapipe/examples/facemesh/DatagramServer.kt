@@ -4,15 +4,38 @@ import androidx.core.math.MathUtils
 import com.google.mediapipe.formats.proto.LandmarkProto
 import com.google.mediapipe.formats.proto.LandmarkProto.NormalizedLandmarkList
 import com.google.mediapipe.solutions.facemesh.FaceMeshResult
+import org.json.JSONArray
+import org.json.JSONObject
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.LinkedBlockingQueue
 import kotlin.concurrent.thread
+import kotlin.math.cos
 import kotlin.math.pow
+import kotlin.math.sin
 import kotlin.math.sqrt
-import org.json.JSONObject
+
+fun toQuaternion(
+    roll: Float,
+    pitch: Float,
+    yaw: Float
+): FloatArray // [x, y, z, w]
+{
+    // Abbreviations for the various angular functions
+    val cr: Float = cos(roll * 0.5f)
+    val sr: Float = sin(roll * 0.5f)
+    val cp: Float = cos(pitch * 0.5f)
+    val sp: Float = sin(pitch * 0.5f)
+    val cy: Float = cos(yaw * 0.5f)
+    val sy: Float = sin(yaw * 0.5f)
+    val w = cr * cp * cy + sr * sp * sy
+    val x = sr * cp * cy - cr * sp * sy
+    val y = cr * sp * cy + sr * cp * sy
+    val z = cr * cp * sy - sr * sp * cy
+    return floatArrayOf(x, y, z, w)
+}
 
 object DatagramServer {
     private val socket: DatagramSocket = DatagramSocket()
@@ -22,7 +45,37 @@ object DatagramServer {
         thread(start = true, isDaemon = false, name = "datagramSender") {
             try {
                 while (true) {
-                    val result = queue.take()
+                    val lm = queue.take()
+                    val json = JSONObject()
+                    calculateMouth(lm, json)
+                    calculateEyeLandmarks(lm, json)
+
+                    val livelink_format = JSONObject()
+                    val livelink_params = JSONArray()
+                    for (key in json.keys()) {
+                        val param = JSONObject();
+                        param.put("Name", key)
+                        param.put("Value", json.get(key))
+                        livelink_params.put(param)
+                    }
+                    livelink_format.put("Parameter", livelink_params)
+
+                    val livelink_bone = JSONArray()
+                    val livelink_headbone = JSONObject()
+                    // val real_rotation = euler?.withX(-euler.x)?.withZ(-euler.z)?.withY(-euler.y)?.let { toQuaternion(.fromEuler(it) }
+                    livelink_headbone.put("Name","Head")
+                    livelink_headbone.put("Parent",-1)
+                    livelink_headbone.put("Location",JSONArray(listOf(0,0,0)))
+                    // livelink_headbone.put("Rotation",JSONArray(listOf(real_rotation?.xyzw?.x,real_rotation?.xyzw?.y!!,real_rotation?.xyzw?.z!!,real_rotation?.xyzw?.w)))
+                    livelink_headbone.put("Rotation",JSONArray(listOf(0, 0, 0, 1)))
+                    livelink_headbone.put("Scale",JSONArray(listOf(0,0,0)))
+                    livelink_bone.put(livelink_headbone)
+                    livelink_format.put("Bone", livelink_bone)
+
+                    val livelink_wrap = JSONObject()
+                    livelink_wrap.put("android", livelink_format)
+
+                    val result = livelink_wrap.toString(0)
                     val buf = result.toByteArray()
                     val packet = DatagramPacket(buf, buf.size, InetAddress.getByName("192.168.178.50"), 54321)
                     socket.send(packet)
