@@ -5,3 +5,10 @@ mediapipe/provisioning_profile.mobileprovision
 node_modules/
 .configure.bazelrc
 .user.bazelrc
+.gradle
+.idea
+build
+local.properties
+gradle
+gradlew
+gradlew.bat

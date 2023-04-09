@@ -40,6 +40,7 @@ import com.google.mediapipe.solutions.hands.HandsResult;
 import java.io.IOException;
 import java.io.InputStream;
 
+
 /** Main activity of MediaPipe Hands app. */
 public class MainActivity extends AppCompatActivity {
   private static final String TAG = "MainActivity";
